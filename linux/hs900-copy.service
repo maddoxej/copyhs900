@@ -1,0 +1,11 @@
+[Unit]
+Description=Copy images from HS900 volume to ~/pictures
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/copy-hs900-images.sh
+Environment=USER=%u
+Environment=HOME=%h
+
+[Install]
+WantedBy=hs900-copy.path

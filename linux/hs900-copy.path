@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch for HS900 volume images directory to appear
+
+[Path]
+# Adjust this path if your distro mounts under /run/media/$USER instead
+DirectoryNotEmpty=/media/%u/HS900/images
+Unit=hs900-copy.service
+
+[Install]
+WantedBy=default.target
