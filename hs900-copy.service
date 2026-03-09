@@ -3,7 +3,7 @@ Description=Copy images from HS900 volume to ~/pictures
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/copy-hs900-images.sh
+ExecStart=%h/.local/bin/hs900-copy.sh
 Environment=USER=%u
 Environment=HOME=%h
 

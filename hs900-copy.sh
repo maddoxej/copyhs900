@@ -1,23 +1,22 @@
 #!/bin/bash
-# copy-hs900-images.sh
-# Automatically copies files from HS900/images and HS900/video to ~/pictures/Year/Month
+# Automatically copies files from HS900/image and HS900/video to ~/pictures/Year/Month
 # Triggered by systemd .path unit when HS900 volume is mounted.
 
 # --- Configuration -----------------------------------------------------------
 # Override the mount point by passing it as the first argument, or set the
 # MOUNT_POINT environment variable. Falls back to /media/$USER/HS900.
 MOUNT_POINT="${1:-${MOUNT_POINT:-/media/$USER/HS900}}"
-SOURCE_DIRS=("images" "video")
-DEST_BASE="$HOME/pictures"
+SOURCE_DIRS=("image" "video")
+DEST_BASE="/mnt/storage/ericpic"
 LOG_TAG="hs900-copy"
 
 log() {
     logger -t "$LOG_TAG" "$1"
 }
 
-# Verify the images source directory exists (video is assumed to follow)
-if [ ! -d "$MOUNT_POINT/images" ]; then
-    log "ERROR: Source directory '$MOUNT_POINT/images' does not exist. Exiting."
+# Verify the image source directory exists (video is assumed to follow)
+if [ ! -d "$MOUNT_POINT/image" ]; then
+    log "ERROR: Source directory '$MOUNT_POINT/image' does not exist. Exiting."
     exit 1
 fi
 
