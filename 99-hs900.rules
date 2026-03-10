@@ -1,0 +1,2 @@
+# Trigger hs900-copy systemd user service when a partition labelled HS900 appears
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="HS900", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="hs900-copy.service"

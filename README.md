@@ -1,38 +1,40 @@
 # HS900 Auto-Copy Setup
 #
-# This installs a systemd .path unit + service so that whenever a
-# volume labelled "HS900" is mounted, today's images are automatically
+# This installs a udev rule + systemd user service so that whenever a
+# volume labelled "HS900" is mounted, today's images and videos are automatically
 # copied to ~/pictures/Year/Month.
 #
-# The .path unit watches for /media/$USER/HS900/images to appear
-# (i.e. become non-empty), then triggers the copy service. No udev
-# rules or root access required.
+# The udev rule detects when the volume is mounted and triggers the copy service.
 #
 # ──────────────────────────────────────────────────────
 # 1. Install the copy script
 # ──────────────────────────────────────────────────────
 #   mkdir -p ~/.local/bin
-#   cp copy-hs900-images.sh ~/.local/bin/
-#   chmod +x ~/.local/bin/copy-hs900-images.sh
+#   cp hs900-copy.sh ~/.local/bin/
+#   chmod +x ~/.local/bin/hs900-copy.sh
 #
 # ──────────────────────────────────────────────────────
-# 2. Install the systemd user units
+# 2. Install the systemd user service
 # ──────────────────────────────────────────────────────
 #   mkdir -p ~/.config/systemd/user
-#   cp hs900-copy.service hs900-copy.path ~/.config/systemd/user/
+#   cp hs900-copy.service ~/.config/systemd/user/
 #   systemctl --user daemon-reload
-#   systemctl --user enable --now hs900-copy.path
 #
 # ──────────────────────────────────────────────────────
-# 3. Test
+# 3. Install the udev rule (requires sudo)
+# ──────────────────────────────────────────────────────
+#   sudo cp 99-hs900.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+#
+# ──────────────────────────────────────────────────────
+# 4. Test
 # ──────────────────────────────────────────────────────
 #   Plug in the HS900. Check the log:
-#     cat ~/.local/log/hs900-copy.log
+#     journalctl --user -u hs900-copy.service
 #
 #   Or trigger it manually:
 #     systemctl --user start hs900-copy.service
 #
 # ──────────────────────────────────────────────────────
-# Note: If your distro mounts removable media under /run/media/$USER
-# instead of /media/$USER, edit the PathExistsGlob line in
-# hs900-copy.path and the MOUNT_POINT default in the script.
+# Note: The .path unit is no longer used. The udev rule handles triggering the service directly.
