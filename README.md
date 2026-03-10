@@ -38,3 +38,15 @@
 #
 # ──────────────────────────────────────────────────────
 # Note: The .path unit is no longer used. The udev rule handles triggering the service directly.
+#
+# ──────────────────────────────────────────────────────
+# How duplicate prevention works
+# ──────────────────────────────────────────────────────
+# Files are processed newest-first. After a successful run, the name
+# of the first (newest) copied file is saved to:
+#   ${XDG_STATE_HOME:-~/.local/state}/hs900-copy/last_file
+#
+# On the next run, when the script encounters that filename it stops
+# immediately, since everything from that point on was already copied.
+# This means re-inserting the card or re-triggering the service will
+# only copy files that are new since the last run.
