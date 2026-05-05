@@ -10,12 +10,7 @@ SOURCE_DIRS=("image" "video")
 DEST_BASE="/mnt/storage/ericpic"
 LOG_TAG="hs900-copy"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/hs900-copy"
-LAST_COPIED_FILE="$STATE_DIR/last_file"
 mkdir -p "$STATE_DIR"
-PREV_FIRST=""
-if [ -f "$LAST_COPIED_FILE" ]; then
-    PREV_FIRST=$(cat "$LAST_COPIED_FILE")
-fi
 
 log() {
     logger -t "$LOG_TAG" "$1"
@@ -45,7 +40,18 @@ log "Destination: $DEST"
 # ------------------------------------------------------------------
 copy_today_files() {
     local src="$1"
+    local dir_name="$2"
     local dir_copied=0 dir_skipped=0 dir_failed=0
+    
+    # Load the last copied file marker for this specific directory
+    local last_copied_file="$STATE_DIR/last_file_$dir_name"
+    local prev_first=""
+    if [ -f "$last_copied_file" ]; then
+        prev_first=$(cat "$last_copied_file")
+    fi
+    
+    local first_copied=""
+    local stop_reached=0
 
     log "Processing: $src"
 
@@ -59,10 +65,10 @@ copy_today_files() {
         filename=$(basename "$file")
         dest_file="$DEST/$filename"
 
-        # If we encounter the first file from the previous run, stop
-        if [ -n "$PREV_FIRST" ] && [ "$filename" = "$PREV_FIRST" ]; then
+        # If we encounter the first file from the previous run (for this dir), stop
+        if [ -n "$prev_first" ] && [ "$filename" = "$prev_first" ]; then
             log "  Reached previously copied file '$filename', stopping."
-            STOP_REACHED=1
+            stop_reached=1
             break
         fi
 
@@ -73,9 +79,9 @@ copy_today_files() {
 
         if cp -a "$file" "$dest_file"; then
             dir_copied=$((dir_copied + 1))
-            # Record the first successfully copied file
-            if [ -z "$FIRST_COPIED" ]; then
-                FIRST_COPIED="$filename"
+            # Record the first successfully copied file for this directory
+            if [ -z "$first_copied" ]; then
+                first_copied="$filename"
             fi
             log "  Copied: $filename"
         else
@@ -84,29 +90,26 @@ copy_today_files() {
         fi
     done < <(find "$src" -maxdepth 1 -type f -printf '%T@ %p\n' | sort -rn | cut -d' ' -f2-)
 
+    # Save the first copied filename for this directory on next run
+    if [ -n "$first_copied" ]; then
+        echo "$first_copied" > "$last_copied_file"
+        log "Marker saved for $dir_name: $first_copied"
+    fi
+
     COPIED=$((COPIED + dir_copied))
     SKIPPED=$((SKIPPED + dir_skipped))
     FAILED=$((FAILED + dir_failed))
+    
+    return $stop_reached
 }
 
 COPIED=0
 SKIPPED=0
 FAILED=0
-FIRST_COPIED=""
-STOP_REACHED=0
 
 for dir in "${SOURCE_DIRS[@]}"; do
-    copy_today_files "$MOUNT_POINT/$dir"
-    if [ "$STOP_REACHED" -eq 1 ]; then
-        break
-    fi
+    copy_today_files "$MOUNT_POINT/$dir" "$dir"
 done
-
-# Save the first copied filename for next run
-if [ -n "$FIRST_COPIED" ]; then
-    echo "$FIRST_COPIED" > "$LAST_COPIED_FILE"
-    log "Marker saved: $FIRST_COPIED"
-fi
 
 SUMMARY="Done. Copied: $COPIED"
 [ "$SKIPPED" -gt 0 ] && SUMMARY="$SUMMARY | Skipped (already exists): $SKIPPED"
